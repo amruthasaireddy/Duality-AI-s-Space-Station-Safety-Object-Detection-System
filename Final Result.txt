@@ -1,0 +1,10 @@
+                 Class     Images  Instances      Box(P          R      mAP50  mAP50-95): 100% ━━━━━━━━━━━━ 88/88 5.1it/s 17.2s
+                   all       1408       5729      0.803      0.515      0.591      0.472
+            OxygenTank        757       1537      0.872      0.694      0.767      0.657
+          NitrogenTank        677       1534      0.874      0.596      0.696      0.612
+           FirstAidBox        541        780      0.778      0.628      0.692      0.586
+             FireAlarm        269        330      0.794      0.364      0.435       0.33
+     SafetySwitchPanel        375        445       0.83      0.458      0.551      0.394
+        EmergencyPhone        327        426      0.741      0.385      0.443      0.298
+      FireExtinguisher        438        677      0.733      0.483       0.55       0.43
+Speed: 1.2ms preprocess, 6.8ms inference, 0.0ms loss, 0.9ms postprocess per image
