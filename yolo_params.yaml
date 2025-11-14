@@ -1,0 +1,8 @@
+train: C:\Users\vredd\Downloads\hackathon2_train_1\train_1\train1
+
+val: C:\Users\vredd\Downloads\hackathon2_train_1\train_1\val1
+
+test: C:\Users\vredd\Downloads\hackathon2_test3\test3
+
+nc: 7
+names: ['OxygenTank', 'NitrogenTank', 'FirstAidBox', 'FireAlarm', 'SafetySwitchPanel', 'EmergencyPhone', 'FireExtinguisher']                                         
