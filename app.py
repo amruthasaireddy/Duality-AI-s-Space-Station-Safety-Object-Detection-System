@@ -150,13 +150,15 @@ with tab2:
         st.success(f"Found 'yolo_params.yaml'")
         
         with open(yaml_path, 'r') as file:
-            try:
-                data_params = yaml.safe_load(file)
-                st.write("Contents of 'yolo_params.yaml':")
-                st.json(data_params)
-            except Exception as e:
-                st.error(f"Error reading YAML file: {e}")
-                data_params = None
+            yaml_content = file.read()
+            
+        try:
+            data_params = yaml.safe_load(yaml_content)
+            st.write("Contents of 'yolo_params.yaml':")
+            st.code(yaml_content, language="yaml")
+        except Exception as e:
+            st.error(f"Error reading YAML file: {e}")
+            data_params = None
 
         if data_params and 'test' in data_params and data_params['test'] is not None:
             st.info(f"Test dataset path defined in YAML: **{data_params['test']}**")
