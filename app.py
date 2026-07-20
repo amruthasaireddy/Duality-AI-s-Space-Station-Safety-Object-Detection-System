@@ -151,45 +151,61 @@ with tab2:
         with open(yaml_path, 'r') as file:
             try:
                 data_params = yaml.safe_load(file)
-                st.json(data_params, "Contents of 'yolo_params.yaml'")
+                st.write("Contents of 'yolo_params.yaml':")
+                st.json(data_params)
             except Exception as e:
                 st.error(f"Error reading YAML file: {e}")
                 data_params = None
 
         if data_params and 'test' in data_params and data_params['test'] is not None:
-            st.info(f"Test dataset path: **{data_params['test']}**")
+            st.info(f"Test dataset path defined in YAML: **{data_params['test']}**")
+            
+            # --- Display Existing Validation Results ---
+            st.markdown("### Existing Validation Results")
+            st.write("Displaying metrics from the model's training run:")
+            
+            train_dir = selected_model_path.parent.parent
+            
+            col_img1, col_img2 = st.columns(2)
+            
+            cm_path = train_dir / "confusion_matrix.png"
+            if cm_path.exists():
+                with col_img1:
+                    st.image(str(cm_path), caption="Confusion Matrix", use_column_width=True)
+            
+            pr_path = train_dir / "BoxPR_curve.png" # Usually BoxPR_curve.png in newer ultralytics
+            if not pr_path.exists():
+                pr_path = train_dir / "PR_curve.png"
+                
+            if pr_path.exists():
+                with col_img2:
+                    st.image(str(pr_path), caption="Precision-Recall Curve", use_column_width=True)
+            
+            st.markdown("---")
+            st.markdown("### Run New Validation")
+            st.warning("Note: Running validation on Streamlit Cloud requires the dataset to be accessible by the server. If the path above is a local Windows path, this will fail.")
             
             if st.button("Run Validation on Test Set", type="primary"):
-                with st.spinner("Running validation... This may take some time."):
-                    try:
-                        # Run validation
-                        metrics = model.val(data=str(yaml_path), split="test")
-                        
-                        st.subheader("Validation Metrics")
-                        col1, col2, col3 = st.columns(3)
-                        col1.metric("mAP50-95 (Box)", f"{metrics.box.map:.4f}")
-                        col2.metric("mAP50 (Box)", f"{metrics.box.map50:.4f}")
-                        col3.metric("mAP75 (Box)", f"{metrics.box.map75:.4f}")
-                        
-                        st.subheader("All Metrics")
-                        st.json(metrics.box.json) # Display all metrics
-                        
-                        st.subheader("Confusion Matrix")
-                        cm_path = metrics.save_dir / "confusion_matrix.png"
-                        if cm_path.exists():
-                            st.image(str(cm_path), caption="Confusion Matrix")
-                        else:
-                            st.warning("Confusion matrix image not found.")
-
-                        st.subheader("P-R Curve")
-                        pr_path = metrics.save_dir / "PR_curve.png"
-                        if pr_path.exists():
-                            st.image(str(pr_path), caption="Precision-Recall Curve")
-                        else:
-                            st.warning("P-R curve image not found.")
-
-                    except Exception as e:
-                        st.error(f"An error occurred during validation:")
-                        st.exception(e)
+                test_path = Path(data_params['test'])
+                if not test_path.exists():
+                    st.error(f"Dataset path `{test_path}` does not exist on this server. Cannot run validation.")
+                else:
+                    with st.spinner("Running validation... This may take some time."):
+                        try:
+                            # Run validation
+                            metrics = model.val(data=str(yaml_path), split="test")
+                            
+                            st.subheader("Validation Metrics")
+                            col1, col2, col3 = st.columns(3)
+                            col1.metric("mAP50-95 (Box)", f"{metrics.box.map:.4f}")
+                            col2.metric("mAP50 (Box)", f"{metrics.box.map50:.4f}")
+                            col3.metric("mAP75 (Box)", f"{metrics.box.map75:.4f}")
+                            
+                            st.subheader("All Metrics")
+                            st.json(metrics.box.json) # Display all metrics
+                            
+                        except Exception as e:
+                            st.error(f"An error occurred during validation:")
+                            st.exception(e)
         else:
             st.warning("No 'test' field found in 'yolo_params.yaml'. Cannot run validation.")
