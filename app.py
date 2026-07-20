@@ -5,6 +5,7 @@ import cv2
 import os
 import yaml
 from PIL import Image
+import pandas as pd
 
 # --- Helper Functions ---
 
@@ -160,11 +161,42 @@ with tab2:
         if data_params and 'test' in data_params and data_params['test'] is not None:
             st.info(f"Test dataset path defined in YAML: **{data_params['test']}**")
             
-            # --- Display Existing Validation Results ---
-            st.markdown("### Existing Validation Results")
-            st.write("Displaying metrics from the model's training run:")
+            st.markdown("---")
+            st.markdown("### Model Validation Results")
+            st.write("Since the test dataset is stored locally (4 GB), running live validation on the cloud is disabled. Below are the validation metrics achieved by this model during training.")
             
             train_dir = selected_model_path.parent.parent
+            
+            # Read and display metrics from results.csv
+            results_file = train_dir / "results.csv"
+            if results_file.exists():
+                try:
+                    df = pd.read_csv(results_file)
+                    # Clean column names (remove leading spaces)
+                    df.columns = df.columns.str.strip()
+                    
+                    if not df.empty:
+                        last_epoch = df.iloc[-1]
+                        st.subheader("Validation Metrics")
+                        col1, col2, col3 = st.columns(3)
+                        
+                        map50_95 = last_epoch.get("metrics/mAP50-95(B)", 0)
+                        map50 = last_epoch.get("metrics/mAP50(B)", 0)
+                        precision = last_epoch.get("metrics/precision(B)", 0)
+                        recall = last_epoch.get("metrics/recall(B)", 0)
+                        
+                        col1.metric("mAP50-95 (Box)", f"{map50_95:.4f}")
+                        col2.metric("mAP50 (Box)", f"{map50:.4f}")
+                        col3.metric("Precision", f"{precision:.4f}")
+                        
+                        st.write(f"**Recall:** {recall:.4f}")
+                        
+                except Exception as e:
+                    st.error(f"Could not load metrics from results.csv: {e}")
+            else:
+                st.warning("Could not find results.csv for this model.")
+                
+            st.markdown("---")
             
             col_img1, col_img2 = st.columns(2)
             
@@ -181,31 +213,5 @@ with tab2:
                 with col_img2:
                     st.image(str(pr_path), caption="Precision-Recall Curve", use_column_width=True)
             
-            st.markdown("---")
-            st.markdown("### Run New Validation")
-            st.warning("Note: Running validation on Streamlit Cloud requires the dataset to be accessible by the server. If the path above is a local Windows path, this will fail.")
-            
-            if st.button("Run Validation on Test Set", type="primary"):
-                test_path = Path(data_params['test'])
-                if not test_path.exists():
-                    st.error(f"Dataset path `{test_path}` does not exist on this server. Cannot run validation.")
-                else:
-                    with st.spinner("Running validation... This may take some time."):
-                        try:
-                            # Run validation
-                            metrics = model.val(data=str(yaml_path), split="test")
-                            
-                            st.subheader("Validation Metrics")
-                            col1, col2, col3 = st.columns(3)
-                            col1.metric("mAP50-95 (Box)", f"{metrics.box.map:.4f}")
-                            col2.metric("mAP50 (Box)", f"{metrics.box.map50:.4f}")
-                            col3.metric("mAP75 (Box)", f"{metrics.box.map75:.4f}")
-                            
-                            st.subheader("All Metrics")
-                            st.json(metrics.box.json) # Display all metrics
-                            
-                        except Exception as e:
-                            st.error(f"An error occurred during validation:")
-                            st.exception(e)
         else:
-            st.warning("No 'test' field found in 'yolo_params.yaml'. Cannot run validation.")
+            st.warning("No 'test' field found in 'yolo_params.yaml'. Cannot show validation.")

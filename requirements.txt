@@ -3,3 +3,4 @@ ultralytics
 opencv-python-headless
 pyyaml
 Pillow
+pandas
